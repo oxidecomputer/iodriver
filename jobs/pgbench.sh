@@ -9,5 +9,17 @@
 #: services.postgresql.enable = true
 #:
 
+set -euxo pipefail
+
 which pgbench
 echo "hello, world"
+
+export PGUSER=postgres
+
+# init db
+pgbench -i 
+
+# bench 3 times
+pgbench
+pgbench
+pgbench
