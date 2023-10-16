@@ -3,10 +3,11 @@
 #: name = "pgbench"
 #: disk_format = "ext4"
 #: driver = "nixos-container"
-#: packages = ["pgbench"]
+#: packages = ["postgresql"]
 #:
-#: [nixos-module]
-#: services.postgresql.enable = true
+#: [nixos-module.services.postgresql]
+#: enable = true
+#: authentication = "local all all trust\n"
 #:
 
 set -euxo pipefail
