@@ -1,4 +1,4 @@
-{ config, lib, modulesPath, ... }: {
+{ config, lib, modulesPath, pkgs, ... }: {
   imports = [
     "${modulesPath}/installer/cd-dvd/iso-image.nix"
     ./jobs.nix
@@ -6,6 +6,7 @@
   ];
 
   networking.hostName = "iodriver";
+  environment.systemPackages = with pkgs; [ serial-bridge ];
 
   # Allow login as root without a password.
   users.users.root.initialHashedPassword = "";
