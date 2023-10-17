@@ -5,7 +5,7 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-pub const ALIGNMENT_SEQUENCE: &[u8] = "==\"'= ALIGNTMENT SEQUENCE - SOLSTICE =\"'==".as_bytes();
+pub const ALIGNMENT_SEQUENCE: &[u8] = "==\"'= ALIGNMENT SEQUENCE - SOLSTICE =\"'==".as_bytes();
 
 #[derive(PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub struct TestOutput {

@@ -4,6 +4,7 @@
 
 use anyhow::Result;
 use argh::FromArgs;
+use camino::Utf8PathBuf;
 use serial_bridge::serial_bridge_protocol::{GuestToHostMsg, TestOutput, ALIGNMENT_SEQUENCE};
 use tokio::io::AsyncWriteExt;
 use tokio_serial::SerialStream;
@@ -23,8 +24,8 @@ struct SerBridgeSendTestResultsCmd {
     test_name: String,
 
     #[argh(option)]
-    /// actual output from the test, whatever it may be
-    test_output: String,
+    /// file containing actual output from the test, whatever it may be
+    test_output: Utf8PathBuf,
 
     #[argh(option)]
     /// what exit code did the test leave with?
@@ -64,10 +65,13 @@ async fn main() -> Result<()> {
 
     let msg = match args.subcmd {
         SerBridgeGuestSubCmd::SendTestResults(cmd_data) => {
+            let output = tokio::fs::read(cmd_data.test_output).await?;
+            let output = String::from_utf8_lossy(&output).to_string();
+
             let test_output = TestOutput {
                 execution_id: cmd_data.test_execution_id,
                 name: cmd_data.test_name,
-                output: cmd_data.test_output,
+                output,
                 dmesg: cmd_data.dmesg_output,
                 exitcode: cmd_data.test_exit_code,
                 runtime_millis: cmd_data.test_runtime_millis,
