@@ -41,7 +41,7 @@ struct SerBridgeSendTestResultsCmd {
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
-#[argh(subcommand, name = "send-results")]
+#[argh(subcommand, name = "send-done")]
 /// tell the host that we are done running tests
 struct SerBridgeSendDoneCmd {}
 
