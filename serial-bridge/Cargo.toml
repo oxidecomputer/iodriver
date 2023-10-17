@@ -1,0 +1,27 @@
+[package]
+name = "serial-bridge"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = { version = "1.0.75", features = ["backtrace"] }
+argh = "0.1.12"
+camino = "1.1.6"
+serde = { version = "1.0.189", features = ["derive"] }
+serde_json = "1.0.107"
+tokio = { version = "1.33.0", features = ["full"] }
+tokio-serde = { version = "0.8.0", features = ["json"] }
+tokio-util = { version = "0.7.9", features = ["codec", "full"] }
+uuid = { version = "1.4.1", features = ["serde", "v4"] }
+
+# tokio-serial doesn't build on illumos
+[target.'cfg(target_os = "linux")'.dependencies]
+tokio-serial = { version = "5.4.4", features = ["codec", "libudev", "tokio-util", "rt"] }
+
+# don't build guest-side unless we are building for linux (as controlled by)
+# the conditional feature flag on tokio-serial
+[[bin]]
+name = "serial-bridge-guest"
+required-features = ["tokio-serial/codec"]
