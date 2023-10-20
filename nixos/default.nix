@@ -38,17 +38,8 @@
     '';
   };
 
-  boot.loader.grub.extraConfig = ''
-    serial --unit=1 --speed=115200 --word=8 --parity=no --stop=1
-    terminal_input --append serial
-    terminal_output --append serial
-  '';
   boot.loader.timeout = lib.mkForce 3;
-  boot.kernelParams = [
-    "console=tty0"
-    "console=ttyS0,115200"
-    "console=ttyS1,115200"
-  ];
+  boot.kernelParams = [ "console=tty0" ];
 
   # We do not intend to install NixOS from this ISO.
   system.disableInstallerTools = true;
