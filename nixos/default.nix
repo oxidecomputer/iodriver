@@ -20,6 +20,7 @@
   virtualisation.vmVariant = {
     virtualisation.diskImage = null;
     virtualisation.graphics = false;
+    virtualisation.memorySize = 4096;
     virtualisation.useDefaultFilesystems = false;
     virtualisation.fileSystems."/" = {
       fsType = "tmpfs";
