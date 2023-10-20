@@ -1,8 +1,10 @@
-{ config, lib, ... }: {
+{ config, lib, pkgs, ... }: {
   containers = builtins.mapAttrs
     (name: options: {
       config = { config, ... }: {
         imports = [ (options.nixos-module or { }) ];
+        environment.systemPackages =
+          builtins.map (pkg: pkgs.${pkg}) (options.packages);
         system.stateVersion = config.system.nixos.version;
       };
       ephemeral = true;
