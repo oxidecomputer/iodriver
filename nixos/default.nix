@@ -28,7 +28,6 @@ in
   isoImage.squashfsCompression = "zstd -Xcompression-level 3";
 
   virtualisation.vmVariant = {
-    virtualisation.diskImage = null;
     virtualisation.graphics = false;
     virtualisation.memorySize = 4096;
     virtualisation.useDefaultFilesystems = false;
@@ -39,7 +38,8 @@ in
 
     # Have `qemu-vm.nix` generate us an empty disk image, and use it as
     # /dev/cobblestone.
-    virtualisation.emptyDiskImages = [ (128 * 1024) ];
+    virtualisation.diskImage = "./iodriver.qcow2";
+    virtualisation.diskSize = 128 * 1024;
     iodriver.cobblestone = "vda";
 
     # `installer/cd-dvd/iso-image.nix` sets a boot.postBootCommands which
@@ -51,6 +51,11 @@ in
       if [[ "$(cat /proc/cmdline)" =~ regInfo=([^ ]*) ]]; then
         ${config.nix.package.out}/bin/nix-store --load-db < ''${BASH_REMATCH[1]}
       fi
+
+      # `qemu-vm.nix` does not wipe this device between runs, so ensure it's
+      # ready for use. (We could instead use `virtualisation.emptyDiskImages`
+      # but that puts them in $TMPDIR and the UX there is kinda bad.)
+      ${pkgs.util-linux}/bin/wipefs --all --quiet /dev/vda
     '';
   };
 
