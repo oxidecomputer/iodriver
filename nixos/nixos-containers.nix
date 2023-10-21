@@ -1,6 +1,8 @@
-{ config, lib, pkgs, ... }: let
+{ config, lib, pkgs, ... }:
+let
   mkfs.ext4 = "mkfs.ext4 -E lazy_itable_init=0,lazy_journal_init=0";
-in {
+in
+{
   containers = builtins.mapAttrs
     (name: job: {
       config = { config, ... }: {
@@ -10,11 +12,12 @@ in {
         system.stateVersion = config.system.nixos.version;
       };
       ephemeral = true;
-      bindMounts = lib.mkIf (job.disk_format != "block") {
-        "/" = { hostPath = "/iodriver"; isReadOnly = false; };
-      };
+      bindMounts =
+        if job.disk_format == "block"
+        then { "/dev/cobblestone".isReadOnly = false; }
+        else { "/".hostPath = "/iodriver"; "/".isReadOnly = false; };
       allowedDevices = lib.mkIf (job.disk_format == "block") [
-        { node = "/dev/cobblestone"; modifier = "rwm"; }
+        { node = "/dev/cobblestone"; modifier = "rw"; }
       ];
     })
     config.iodriver.jobs.nixos-container;
@@ -26,9 +29,9 @@ in {
         jobname=${lib.strings.escapeShellArg name}
 
         _iodriver_cleanup() {
+          set +o errexit
           nixos-container stop "$jobname"
-          grep -q /dev/cobblestone /proc/mounts \
-            && umount --all-targets /dev/cobblestone
+          umount --all-targets --quiet /dev/cobblestone
           wipefs --all --quiet /dev/cobblestone
         }
         trap _iodriver_cleanup EXIT

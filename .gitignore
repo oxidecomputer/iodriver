@@ -1,2 +1,3 @@
+/nix-vm.*
 /result*
-serial-bridge/target
+/serial-bridge/target

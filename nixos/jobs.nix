@@ -1,7 +1,5 @@
 { lib, pkgs, ... }: {
-  options.iodriver.jobs = lib.mkOption { };
-
-  config.iodriver.jobs =
+  iodriver.jobs =
     let
       mkShellScriptJob = f:
         let

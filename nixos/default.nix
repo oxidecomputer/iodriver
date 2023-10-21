@@ -1,12 +1,22 @@
-{ config, lib, modulesPath, pkgs, ... }: {
+{ config, lib, modulesPath, pkgs, ... }:
+let
+  cfg = config.iodriver;
+in
+{
   imports = [
     "${modulesPath}/installer/cd-dvd/iso-image.nix"
     ./jobs.nix
     ./nixos-containers.nix
+    ./options.nix
   ];
 
   networking.hostName = "iodriver";
   environment.systemPackages = with pkgs; [ serial-bridge ];
+
+  # Symlink our test disk to /dev/cobblestone.
+  services.udev.extraRules = ''
+    KERNEL=="${cfg.cobblestone}", SYMLINK+="cobblestone"
+  '';
 
   # Allow login as root without a password.
   users.users.root.initialHashedPassword = "";
@@ -26,6 +36,11 @@
       fsType = "tmpfs";
       options = [ "mode=0755" ];
     };
+
+    # Have `qemu-vm.nix` generate us an empty disk image, and use it as
+    # /dev/cobblestone.
+    virtualisation.emptyDiskImages = [ (128 * 1024) ];
+    iodriver.cobblestone = "vda";
 
     # `installer/cd-dvd/iso-image.nix` sets a boot.postBootCommands which
     # imports /nix/store/nix-path-registration, which does not exist in the 9p-
