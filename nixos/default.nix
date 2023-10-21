@@ -5,6 +5,7 @@ in
 {
   imports = [
     "${modulesPath}/installer/cd-dvd/iso-image.nix"
+    ./driver.nix
     ./jobs.nix
     ./nixos-containers.nix
     ./options.nix
