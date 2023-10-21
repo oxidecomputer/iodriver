@@ -1,5 +1,6 @@
-{ lib, pkgs, ... }: {
-  iodriver.jobs =
+{ lib, pkgs, ... }:
+let
+  jobs =
     let
       mkShellScriptJob = f:
         let
@@ -25,8 +26,18 @@
         then mkShellScriptJob f
         else null;
     in
+    builtins.map mkJob (import ../jobs);
+in
+{
+  iodriver.jobs =
     builtins.mapAttrs (_: builtins.listToAttrs)
-      (builtins.groupBy
-        (job: job.value.driver)
-        (builtins.map mkJob (import ../jobs)));
+      (builtins.groupBy (job: job.value.driver) jobs);
+
+  environment.systemPackages = [
+    (pkgs.writeShellApplication {
+      name = "iodriver-run-all-jobs";
+      text = builtins.concatStringsSep "\n"
+        (builtins.map (job: "iodriver-run-job-${job.name}") jobs);
+    })
+  ];
 }
