@@ -27,6 +27,13 @@ in
       name = "iodriver-run-job-${name}";
       text = ''
         jobname=${lib.strings.escapeShellArg name}
+        job_output_file="/tmp/$jobname-output.txt"
+
+        get_time_millis() {
+          # get time in nanos but shave off the last 6 digits of micros/nanos to
+          # leave us with time in milliseconds
+          date +'%s%N' | sed 's/......$//'
+        }
 
         _iodriver_cleanup() {
           set +o errexit
@@ -42,7 +49,21 @@ in
           mount -t ${job.disk_format} /dev/cobblestone /iodriver
         ''}
         nixos-container start "$jobname"
-        nixos-container run "$jobname" -- ${job}
+
+        
+        job_start="$(get_time_millis)"
+        nixos-container run "$jobname" -- ${job} &> "$job_output_file" 
+        job_exit="$?"
+        job_end="$(get_time_millis)"
+
+        job_time_elapsed="$(( job_end - job_start ))"
+        
+        ${pkgs.serial-bridge}/bin/serial-bridge-guest send-results \
+          --test-name "$jobname" \
+          --test-output "$job_output_file" \
+          --test-exit-code "$job_exit" \
+          --test-runtime-millis "$job_time_elapsed" \
+          --dmesg-output "todo i guess"
       '';
     })
     config.iodriver.groupedJobs.nixos-container;
