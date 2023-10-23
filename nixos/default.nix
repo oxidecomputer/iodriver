@@ -42,5 +42,6 @@ in
   # General other minimization
   documentation.doc.enable = false;
   documentation.info.enable = false;
+  documentation.nixos.enable = false;
   programs.command-not-found.enable = false;
 }
