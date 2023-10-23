@@ -1,6 +1,6 @@
 {
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
-  inputs.crane.url = "github:ipetkov/crane/v0.14.2";
+  inputs.crane.url = "github:ipetkov/crane/v0.14.3";
   inputs.crane.inputs.nixpkgs.follows = "nixpkgs";
 
   outputs = { nixpkgs, crane, ... }:
