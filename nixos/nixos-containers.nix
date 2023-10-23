@@ -20,7 +20,7 @@ in
         { node = "/dev/cobblestone"; modifier = "rw"; }
       ];
     })
-    config.iodriver.jobs.nixos-container;
+    config.iodriver.groupedJobs.nixos-container;
 
   environment.systemPackages = lib.attrsets.mapAttrsToList
     (name: job: pkgs.writeShellApplication {
@@ -45,5 +45,5 @@ in
         nixos-container run "$jobname" -- ${job}
       '';
     })
-    config.iodriver.jobs.nixos-container;
+    config.iodriver.groupedJobs.nixos-container;
 }

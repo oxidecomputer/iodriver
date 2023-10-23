@@ -29,7 +29,8 @@ let
     builtins.map mkJob (import ../jobs);
 in
 {
-  iodriver.jobs =
+  iodriver.jobs = builtins.listToAttrs jobs;
+  iodriver.groupedJobs =
     builtins.mapAttrs (_: builtins.listToAttrs)
       (builtins.groupBy (job: job.value.driver) jobs);
 
