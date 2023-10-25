@@ -81,7 +81,7 @@ async fn main() -> Result<()> {
         SerBridgeGuestSubCmd::SendDone(_) => GuestToHostMsg::Done(),
     };
 
-    let msg_json = serde_json::to_string_pretty(&msg)?.into_bytes();
+    let msg_json = serde_json::to_string(&msg)?.into_bytes();
 
     // I don't really want binary on the serial just so that we don't clog up
     // peoples' terminals if they want to view the output raw. So I'll use a
