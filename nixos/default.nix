@@ -32,6 +32,7 @@ in
 
   boot.loader.timeout = lib.mkForce 3;
   boot.kernelParams = [ "console=tty0" ];
+  boot.initrd.availableKernelModules = [ "virtio_pci" "virtio_blk" ];
 
   # We do not intend to install NixOS from this ISO.
   system.disableInstallerTools = true;
