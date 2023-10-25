@@ -90,6 +90,7 @@ async fn receive_message<T: AsyncRead + Unpin>(stream: &mut T) -> Result<GuestTo
     }
 
     // Flush the last of any stderr we need to write and then drop the writer
+    stderr.write_u8(b'\n').await?;
     stderr.flush().await?;
     drop(stderr);
 
