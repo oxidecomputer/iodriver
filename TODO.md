@@ -1,4 +1,3 @@
-- Forward console to stderr in serial bridge host
 - Disable dmesg while printing results to serial bridge host
 - eventually, capture dmesg and associate with test
 - send serial bridge host a "im done" message when we've run all the tests

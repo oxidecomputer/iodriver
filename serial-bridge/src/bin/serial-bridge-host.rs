@@ -7,7 +7,10 @@ use argh::FromArgs;
 use camino::Utf8PathBuf;
 use serial_bridge::serial_bridge_protocol::{GuestToHostMsg, ALIGNMENT_SEQUENCE};
 use std::{collections::VecDeque, io::ErrorKind};
-use tokio::{io::AsyncReadExt, net::UnixStream};
+use tokio::{
+    io::{self, AsyncRead, AsyncReadExt, AsyncWriteExt, BufReader, BufWriter},
+    net::UnixStream,
+};
 
 #[derive(FromArgs, PartialEq, Debug)]
 /// serial bridge host side. runs until guest says all tests are done.
@@ -21,14 +24,20 @@ struct SerBridgeHostCmd {
 async fn main() -> Result<()> {
     let args: SerBridgeHostCmd = argh::from_env();
 
-    let mut stream = UnixStream::connect(&args.vm_serial).await?;
+    let stream = UnixStream::connect(&args.vm_serial).await?;
+
+    // BufferedReader bufferedRead = new BufferedReader(UnixStream)
+    let mut buf_stream = BufReader::new(stream);
+    let mut stdout = io::stdout();
 
     loop {
-        let msg = receive_message(&mut stream).await?;
+        let msg = receive_message(&mut buf_stream).await?;
         match msg {
             GuestToHostMsg::TestOutput(output) => {
-                // Just re-serialize to json I guess
-                println!("{}", serde_json::to_string(&output)?);
+                let out_json = serde_json::to_string_pretty(&output)?;
+                stdout.write_all(out_json.as_bytes()).await?;
+                stdout.write_u8(b'\n').await?;
+                stdout.flush().await?;
             }
             GuestToHostMsg::Done() => break,
         }
@@ -37,7 +46,9 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn receive_message(stream: &mut UnixStream) -> Result<GuestToHostMsg> {
+async fn receive_message<T: AsyncRead + Unpin>(stream: &mut T) -> Result<GuestToHostMsg> {
+    let stderr = io::stderr();
+    let mut stderr = BufWriter::new(stderr);
     // Wait for complete alignment sequence. We need this to skip over any
     // bootloader crud before the other end starts running.
     {
@@ -59,6 +70,16 @@ async fn receive_message(stream: &mut UnixStream) -> Result<GuestToHostMsg> {
                 Ok(1) => {
                     scanning_buffer.push_back(byte[0]);
                     let _ = scanning_buffer.pop_front();
+
+                    // Forward the byte to stderr. This does mean that the
+                    // alignment sequence will end up in stderr, but the json
+                    // won't
+                    stderr.write(&byte).await?;
+
+                    // Flush stderr on \r or \n
+                    if byte[0] == b'\r' || byte[0] == b'\n' {
+                        stderr.flush().await?;
+                    }
                 }
                 Ok(_) => unreachable!(),
                 Err(e) if e.kind() == ErrorKind::WouldBlock => (), // read timeout, which is fine
@@ -67,6 +88,10 @@ async fn receive_message(stream: &mut UnixStream) -> Result<GuestToHostMsg> {
             }
         }
     }
+
+    // Flush the last of any stderr we need to write and then drop the writer
+    stderr.flush().await?;
+    drop(stderr);
 
     // Read length of message
     let mut len_buf = [0u8; 24];
