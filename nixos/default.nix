@@ -25,6 +25,7 @@ in
   # Automatically log in on gettys.
   services.getty.autologinUser = "root";
 
+  isoImage.isoBaseName = "iodriver";
   isoImage.makeEfiBootable = true;
   isoImage.makeUsbBootable = true;
   isoImage.squashfsCompression = "zstd -Xcompression-level 3";
