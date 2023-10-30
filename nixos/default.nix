@@ -31,7 +31,7 @@ in
   isoImage.squashfsCompression = "zstd -Xcompression-level 3";
 
   boot.loader.timeout = lib.mkForce 3;
-  boot.kernelParams = [ "console=tty0" ];
+  boot.kernelParams = [ "console=ttyS0" "console=tty0" ];
   boot.initrd.availableKernelModules = [ "virtio_pci" "virtio_blk" ];
 
   # We do not intend to install NixOS from this ISO.
