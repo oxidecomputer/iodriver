@@ -14,6 +14,10 @@
     virtualisation.diskSize = 128 * 1024;
     iodriver.cobblestone = "vda";
 
+    # Don't run `iodriver.service` on boot, as we're probably here to debug
+    # something.
+    systemd.services.iodriver.wantedBy = lib.mkForce [ ];
+
     # `installer/cd-dvd/iso-image.nix` sets a boot.postBootCommands which
     # imports /nix/store/nix-path-registration, which does not exist in the 9p-
     # based /nix/store, and then runs a nix-env command that attempts to realise
