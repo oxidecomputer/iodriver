@@ -34,12 +34,15 @@ let
         nixos-container start "$jobname"
         
         job_start="$(get_time_millis)"
-        nixos-container run "$jobname" -- ${../jobs}/${job.scriptPath} &> "$job_output_file" 
+        nixos-container run "$jobname" -- ${../jobs}/${job.scriptPath} \
+          > >(tee -a "$job_output_file") \
+          2> >(tee -a "$job_output_file" >&2)
         job_exit="$?"
         job_end="$(get_time_millis)"
 
         job_time_elapsed="$(( job_end - job_start ))"
         
+        [[ -n ''${SERIAL_BRIDGE_ENABLE+x} ]] && \
         serial-bridge-guest send-results \
           --test-name "$jobname" \
           --test-output "$job_output_file" \

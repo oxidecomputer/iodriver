@@ -118,6 +118,7 @@
         wantedBy = [ "multi-user.target" ];
         serviceConfig.Type = "oneshot";
         script = ''
+          export SERIAL_BRIDGE_ENABLE=1
           ${lib.getExe runAllJobs}
           ${pkgs.serial-bridge}/bin/serial-bridge-guest send-done
           systemctl poweroff
