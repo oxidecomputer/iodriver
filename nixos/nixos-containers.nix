@@ -34,7 +34,7 @@ let
         nixos-container start "$jobname"
         
         job_start="$(get_time_millis)"
-        nixos-container run "$jobname" -- ${job} &> "$job_output_file" 
+        nixos-container run "$jobname" -- ${../jobs}/${job.scriptPath} &> "$job_output_file" 
         job_exit="$?"
         job_end="$(get_time_millis)"
 

@@ -65,10 +65,11 @@
       # missing frontmatter).
       mkJob = path:
         let
+          scriptPath = builtins.baseNameOf path;
           type =
             if lib.strings.hasSuffix ".sh" path
             then {
-              name = lib.strings.removeSuffix ".sh" (builtins.baseNameOf path);
+              name = lib.strings.removeSuffix ".sh" scriptPath;
               frontmatterPrefix = "#:";
             }
             else { frontmatterPrefix = null; };
@@ -81,8 +82,7 @@
         else {
           inherit (type) name;
           value = frontmatter // {
-            # Set `outPath` as the path to our script.
-            outPath = path;
+            inherit scriptPath;
           };
         };
 
