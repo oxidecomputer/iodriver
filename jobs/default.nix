@@ -1,4 +1,0 @@
-[
-  ./fio.sh
-  ./pgbench.sh
-]

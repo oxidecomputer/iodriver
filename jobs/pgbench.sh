@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 #:
-#: name = "pgbench"
 #: disk_format = "ext4"
 #: driver = "nixos-container"
 #: packages = ["postgresql"]

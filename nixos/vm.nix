@@ -1,3 +1,6 @@
+# Defines a NixOS module to be used when running the development VM with
+# `nix run .#vm`.
+
 {
   virtualisation.vmVariant = { config, lib, pkgs, ... }: {
     virtualisation.graphics = false;

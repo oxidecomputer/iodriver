@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 #:
-#: name = "fio"
 #: disk_format = "block"
 #: driver = "nixos-container"
 #: packages = ["fio"]
