@@ -9,10 +9,9 @@
 #: authentication = "local all all trust\n"
 #:
 
-set -euxo pipefail
+set -euo pipefail
 
-which pgbench
-echo "hello, world"
+# TODO: any particular pgbench args we want to use? any sql?
 
 export PGUSER=postgres
 
