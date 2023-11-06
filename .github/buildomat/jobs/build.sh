@@ -5,7 +5,6 @@
 #: target = "ubuntu-22.04"
 #: output_rules = [
 #:	"=/work/oxidecomputer/iodriver/result/iso/iodriver.iso",
-#:	"=/nix/var/log/nix/drvs/*/*",
 #: ]
 #:
 #: [[publish]]
@@ -26,4 +25,4 @@ install -D .github/buildomat/nix.conf ~/.config/nix/nix.conf
 # shellcheck source=/dev/null
 source ~/.nix-profile/etc/profile.d/nix.sh
 
-nix build
+nix --print-build-logs build
