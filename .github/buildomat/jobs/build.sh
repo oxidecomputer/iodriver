@@ -25,4 +25,4 @@ install -D .github/buildomat/nix.conf ~/.config/nix/nix.conf
 # shellcheck source=/dev/null
 source ~/.nix-profile/etc/profile.d/nix.sh
 
-nix --print-build-logs build
+nix build --print-build-logs
