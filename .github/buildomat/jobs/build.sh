@@ -2,7 +2,7 @@
 #:
 #: name = "iodriver.iso"
 #: variety = "basic"
-#: target = "ubuntu-20.04"
+#: target = "ubuntu-22.04"
 #: output_rules = [
 #:	"=/work/oxidecomputer/iodriver/result/iso/iodriver.iso",
 #:	"=/nix/var/log/nix/drvs/*/*",
