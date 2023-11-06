@@ -27,41 +27,9 @@ numjobs=1
 # from the perspective of any buffering crucible upstairs is doing
 stonewall=1
 
-[randread-4K]
+[write-4K]
 bs=4K
-rw=randread
+rw=write
+' > job.fio
 
-[randread-16K]
-bs=16K
-rw=randread
-
-[randread-4M]
-bs=4M
-rw=randread
-
-[randwrite-4K]
-bs=4K
-rw=randwrite
-
-[randwrite-16K]
-bs=16K
-rw=randwrite
-
-[randwrite-4M]
-bs=4M
-rw=randwrite
-
-[randrw-4K]
-bs=4K
-rw=randrw
-
-[randrw-16K]
-bs=16K
-rw=randrw
-
-[randrw-4M]
-bs=4M
-rw=randrw
-' > general-direct.fio
-
-fio general-direct.fio
+fio job.fio; sync
