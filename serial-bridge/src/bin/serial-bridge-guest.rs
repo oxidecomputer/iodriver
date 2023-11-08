@@ -2,11 +2,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+use std::time::Duration;
+
 use anyhow::Result;
 use argh::FromArgs;
 use camino::Utf8PathBuf;
-use serial_bridge::serial_bridge_protocol::{GuestToHostMsg, TestOutput, ALIGNMENT_SEQUENCE};
-use tokio::io::AsyncWriteExt;
+use serial_bridge::serial_bridge_protocol::{
+    receive_message, send_message, GuestToHostMsg, HostToGuestMsg, TestOutput,
+};
+
+use tokio::time::timeout;
 use tokio_serial::SerialStream;
 use uuid::Uuid;
 
@@ -46,6 +51,12 @@ struct SerBridgeSendTestResultsCmd {
 struct SerBridgeSendDoneCmd {}
 
 #[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "request-test-list")]
+/// request the list of tests to run from the host. if they reply with no tests,
+/// or they never reply, we assume we should run everything.
+struct SerBridgeRequestTestListCmd {}
+
+#[derive(FromArgs, PartialEq, Debug)]
 /// fio rig. see help for individual subcommands.
 struct SerBridgeGuestCmd {
     #[argh(subcommand)]
@@ -56,6 +67,7 @@ struct SerBridgeGuestCmd {
 #[argh(subcommand)]
 enum SerBridgeGuestSubCmd {
     SendTestResults(SerBridgeSendTestResultsCmd),
+    RequestTestList(SerBridgeRequestTestListCmd),
     SendDone(SerBridgeSendDoneCmd),
 }
 
@@ -63,7 +75,10 @@ enum SerBridgeGuestSubCmd {
 async fn main() -> Result<()> {
     let args: SerBridgeGuestCmd = argh::from_env();
 
-    let msg = match args.subcmd {
+    let mut ser = SerialStream::open(&tokio_serial::new("/dev/ttyS0", 115200))
+        .expect("Failed to open serial port");
+
+    let _: anyhow::Result<()> = match args.subcmd {
         SerBridgeGuestSubCmd::SendTestResults(cmd_data) => {
             let output = tokio::fs::read(cmd_data.test_output).await?;
             let output = String::from_utf8_lossy(&output).to_string();
@@ -76,26 +91,42 @@ async fn main() -> Result<()> {
                 exitcode: cmd_data.test_exit_code,
                 runtime_millis: cmd_data.test_runtime_millis,
             };
-            GuestToHostMsg::TestOutput(test_output)
+            let msg = GuestToHostMsg::TestOutput(test_output);
+            send_message(&mut ser, &msg).await?;
+            Ok(())
         }
-        SerBridgeGuestSubCmd::SendDone(_) => GuestToHostMsg::Done(),
+        SerBridgeGuestSubCmd::RequestTestList(_) => {
+            send_message(&mut ser, &GuestToHostMsg::WhatTestsShouldIRun()).await?;
+
+            let response = receive_message(&mut ser);
+
+            // if the other end
+            // doesnt reply to our request for a list of tests to run, then we
+            // will just run everything. and we dont need to worry about like,
+            // discarding bytes or whatever, because if the other side doesnt
+            // reply then there will never be any bytes anyway.
+            let response = timeout(Duration::from_millis(5000), response).await;
+
+            let jobs_to_run = match response {
+                Ok(result) => match result? {
+                    HostToGuestMsg::PleaseRunTheseTests(jobs) => jobs,
+                },
+                Err(_) => {
+                    vec![]
+                }
+            };
+
+            for job in jobs_to_run {
+                println!("{}", job);
+            }
+
+            Ok(())
+        }
+        SerBridgeGuestSubCmd::SendDone(_) => {
+            send_message(&mut ser, &GuestToHostMsg::Done()).await?;
+            Ok(())
+        }
     };
-
-    let msg_json = serde_json::to_string(&msg)?.into_bytes();
-
-    // I don't really want binary on the serial just so that we don't clog up
-    // peoples' terminals if they want to view the output raw. So I'll use a
-    // 0-padded fixed length number instead.
-    let msg_json_len = format!("{:024}", msg_json.len()).into_bytes();
-
-    let mut ser = SerialStream::open(&tokio_serial::new("/dev/ttyS0", 115200))
-        .expect("Failed to open serial port");
-
-    eprintln!("Writing data.");
-    ser.write_all(ALIGNMENT_SEQUENCE).await?;
-    ser.write_all(&msg_json_len).await?;
-    ser.write_all(&msg_json).await?;
-    ser.flush().await?;
 
     Ok(())
 }

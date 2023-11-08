@@ -18,7 +18,7 @@
     groupedJobs = lib.mkOption { };
 
     jobScripts = lib.mkOption {
-      type = lib.types.listOf lib.types.pathInStore;
+      type = lib.types.attrsOf lib.types.pathInStore;
       default = [ ];
     };
   };
@@ -106,7 +106,7 @@
       # Create a shell script to run all jobs scripts.
       runAllJobs = pkgs.writeShellScriptBin
         "iodriver-run-all-jobs"
-        (builtins.concatStringsSep "\n" config.iodriver.jobScripts);
+        (builtins.concatStringsSep "\n" (builtins.attrValues config.iodriver.jobScripts));
     in
     {
       iodriver.jobs = builtins.listToAttrs jobs;
@@ -122,8 +122,25 @@
         wantedBy = [ "multi-user.target" ];
         serviceConfig.Type = "oneshot";
         script = ''
+          set -euxo pipefail
           export SERIAL_BRIDGE_ENABLE=1
-          ${lib.getExe runAllJobs}
+          
+          JOB_LIST="$(${pkgs.serial-bridge}/bin/serial-bridge-guest request-test-list)"
+
+          if [[ -z "$JOB_LIST" ]]; then
+            ${lib.getExe runAllJobs}
+          else
+            job_list_json='${builtins.toJSON (config.iodriver.jobScripts)}'
+
+            # TODO
+            # - dont break if a job has a space in the name
+            # - check if a requested job doesnt exist and print err.
+            #   - right now you just need to get it right
+            for job_name in $JOB_LIST; do
+              $(printf '%s' "$job_list_json" \
+                | ${pkgs.jq}/bin/jq -r '."'"$job_name"'"')
+            done
+          fi
           ${pkgs.serial-bridge}/bin/serial-bridge-guest send-done
           systemctl poweroff
         '';

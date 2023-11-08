@@ -8,12 +8,14 @@
 let
   mkfs.ext4 = "${pkgs.e2fsprogs}/bin/mkfs.ext4 -E lazy_itable_init=0,lazy_journal_init=0";
 
-  scripts = lib.attrsets.mapAttrsToList
+  scripts = builtins.mapAttrs
     (name: job: pkgs.writeShellApplication {
       name = "iodriver-run-job-${name}";
       runtimeInputs = with pkgs; [ nixos-container serial-bridge util-linux ];
       text = ''
         jobname=${lib.strings.escapeShellArg name}
+        # TODO needs to print to ttyS0?
+        printf 'Running job %s\n' "$jobname" >/dev/ttyS0
         job_output_file="/tmp/$jobname-output.txt"
 
         get_time_millis() {
@@ -23,10 +25,12 @@ let
         }
 
         _iodriver_cleanup() {
+          printf 'Finished running job %s\n' "$jobname" >/dev/ttyS0
           set +o errexit
           nixos-container stop "$jobname"
           umount --all-targets --quiet /dev/cobblestone
           wipefs --all --quiet /dev/cobblestone
+          sync
         }
         trap _iodriver_cleanup EXIT
 
@@ -78,7 +82,7 @@ in
     })
     config.iodriver.groupedJobs.nixos-container;
 
-  iodriver.jobScripts = builtins.map lib.getExe scripts;
+  iodriver.jobScripts = builtins.mapAttrs (_: lib.getExe) scripts;
   # Also provide the scripts on the system $PATH.
-  environment.systemPackages = scripts;
+  environment.systemPackages = builtins.attrValues scripts;
 }

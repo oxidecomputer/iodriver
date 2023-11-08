@@ -2,13 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use anyhow::{bail, Result};
 use argh::FromArgs;
 use camino::Utf8PathBuf;
-use serial_bridge::serial_bridge_protocol::{GuestToHostMsg, ALIGNMENT_SEQUENCE};
-use std::{collections::VecDeque, io::ErrorKind};
+use serial_bridge::serial_bridge_protocol::{
+    receive_message, send_message, GuestToHostMsg, HostToGuestMsg,
+};
+
 use tokio::{
-    io::{self, AsyncRead, AsyncReadExt, AsyncWriteExt, BufReader, BufWriter},
+    io::{self, AsyncWriteExt, BufReader},
     net::UnixStream,
 };
 
@@ -18,16 +19,29 @@ struct SerBridgeHostCmd {
     #[argh(option)]
     /// path to vm's serial console
     vm_serial: Utf8PathBuf,
+
+    #[argh(option)]
+    /// list of specific jobs to run. you can specify multiple! If you dont pass
+    /// in this variable, all available jobs will run. You can find the
+    /// list of available jobs by looking at the jobs directory on the iodriver
+    /// github repo. Each `.sh` file has a job, where the name is the same as
+    /// the file name just without the `.sh`. So cool_job.sh would translate to
+    /// --job cool_job
+    job: Vec<String>,
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> anyhow::Result<()> {
     let args: SerBridgeHostCmd = argh::from_env();
+
+    let job = args.job.clone();
 
     let stream = UnixStream::connect(&args.vm_serial).await?;
 
+    let (read, mut write) = stream.into_split();
+
     // BufferedReader bufferedRead = new BufferedReader(UnixStream)
-    let mut buf_stream = BufReader::new(stream);
+    let mut buf_stream = BufReader::new(read);
     let mut stdout = io::stdout();
 
     loop {
@@ -39,72 +53,16 @@ async fn main() -> Result<()> {
                 stdout.write_u8(b'\n').await?;
                 stdout.flush().await?;
             }
+            GuestToHostMsg::WhatTestsShouldIRun() => {
+                send_message(
+                    &mut write,
+                    &HostToGuestMsg::PleaseRunTheseTests(job.clone()),
+                )
+                .await?
+            }
             GuestToHostMsg::Done() => break,
         }
     }
 
     Ok(())
-}
-
-async fn receive_message<T: AsyncRead + Unpin>(stream: &mut T) -> Result<GuestToHostMsg> {
-    let stderr = io::stderr();
-    let mut stderr = BufWriter::new(stderr);
-    // Wait for complete alignment sequence. We need this to skip over any
-    // bootloader crud before the other end starts running.
-    {
-        // Scan through so we look at a [ segment ] the length of the alignment buffer.
-        // One character goes in, one comes back out
-        // 0   1   2   <-[ 3 4 5 6 7 ]<-   8   9   A
-        let mut scanning_buffer = VecDeque::new();
-
-        // Initiallize with zeroes matching the expected message length
-        for _ in ALIGNMENT_SEQUENCE.iter() {
-            scanning_buffer.push_back(0u8);
-        }
-
-        // Until we've read the alignment sequence, read one byte at a time.
-        while !scanning_buffer.iter().eq(ALIGNMENT_SEQUENCE.iter()) {
-            let mut byte = [0u8; 1];
-            match stream.read(&mut byte).await {
-                Ok(0) => bail!("Serial stream ended before alignment sequence was found."),
-                Ok(1) => {
-                    scanning_buffer.push_back(byte[0]);
-                    let _ = scanning_buffer.pop_front();
-
-                    // Forward the byte to stderr. This does mean that the
-                    // alignment sequence will end up in stderr, but the json
-                    // won't
-                    stderr.write(&byte).await?;
-
-                    // Flush stderr on \r or \n
-                    if byte[0] == b'\r' || byte[0] == b'\n' {
-                        stderr.flush().await?;
-                    }
-                }
-                Ok(_) => unreachable!(),
-                Err(e) if e.kind() == ErrorKind::WouldBlock => (), // read timeout, which is fine
-                Err(e) if e.kind() == ErrorKind::Interrupted => (), // interrupted, which is fine
-                Err(e) => bail!(e),                                // some unexpected error
-            }
-        }
-    }
-
-    // Flush the last of any stderr we need to write and then drop the writer
-    stderr.write_u8(b'\n').await?;
-    stderr.flush().await?;
-    drop(stderr);
-
-    // Read length of message
-    let mut len_buf = [0u8; 24];
-    stream.read_exact(&mut len_buf).await?;
-    let len = usize::from_str_radix(&String::from_utf8(len_buf.to_vec())?, 10)?;
-
-    // Read message
-    let mut msg_buf = Vec::new();
-    msg_buf.resize(len, 0);
-    stream.read_exact(&mut msg_buf).await?;
-
-    let msg = serde_json::from_slice(&msg_buf)?;
-
-    Ok(msg)
 }
