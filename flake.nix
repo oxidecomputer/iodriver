@@ -25,7 +25,7 @@
 
     # Crane is a Nix library for building Rust projects that is easier to use
     # than nixpkgs's built-in Rust builder.
-    crane.url = "github:ipetkov/crane/v0.14.3";
+    crane.url = "github:ipetkov/crane/v0.15.0";
     # Crane defines a `nixpkgs` input. To make sure it uses the same version
     # we're using, we tell Nix to overwrite it with ours.
     crane.inputs.nixpkgs.follows = "nixpkgs";
