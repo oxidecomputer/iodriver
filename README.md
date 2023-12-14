@@ -16,6 +16,8 @@ To build the image:
 nix build
 ```
 
+The output ISO can be found in `result/iso/`.
+
 ## Running in QEMU (without Crucible)
 
 This will run a slightly modified version of iodriver in a QEMU VM:

@@ -4,13 +4,13 @@
 #: variety = "basic"
 #: target = "ubuntu-22.04"
 #: output_rules = [
-#:	"=/work/oxidecomputer/iodriver/result/iso/iodriver.iso",
+#:	"=/work/oxidecomputer/iodriver/result/iso/iodriver-*.iso",
 #: ]
 #:
 #: [[publish]]
 #: series = "iodriver"
 #: name = "iodriver.iso"
-#: from_output = "/work/oxidecomputer/iodriver/result/iso/iodriver.iso"
+#: from_output = "/work/oxidecomputer/iodriver/result/iso/iodriver-*.iso"
 #:
 
 set -o errexit

@@ -36,9 +36,17 @@ in
     users.users.root.initialHashedPassword = "";
     # Automatically log in on gettys.
     services.getty.autologinUser = "root";
+    # Instead of the NixOS version, write our version.
+    services.getty.greetingLine = ''<<< iodriver ${pkgs.iodriver.rev} - \l >>>'';
+    services.getty.helpLine = ''
 
-    # Name the output file `iodriver.iso`.
-    isoImage.isoBaseName = "iodriver";
+      == iodriver console quick reference ==
+      \e{blue}iodriver-run-all-jobs\e{reset}   Run all jobs in order
+      \e{blue}iodriver-run-job-$NAME\e{reset}  Run a specific job
+    '';
+
+    # Name the output file `iodriver-${shortRev}.iso`.
+    isoImage.isoBaseName = "iodriver-${pkgs.iodriver.shortRev}";
     # Use a very quick but effective compression.
     isoImage.squashfsCompression = "zstd -Xcompression-level 3";
 

@@ -32,7 +32,7 @@
   };
 
   # Define our outputs, a function over the inputs.
-  outputs = { nixpkgs, crane, ... }:
+  outputs = { self, nixpkgs, crane, ... }:
     # `let ... in` is used for variable binding.
     let
       # Import nixpkgs for "x86_64-linux".
@@ -43,6 +43,8 @@
         overlays = [
           (pkgs: orig: {
             craneLib = crane.mkLib pkgs;
+            iodriver.rev = self.rev or self.dirtyRev;
+            iodriver.shortRev = self.shortRev or self.dirtyShortRev;
             serial-bridge = pkgs.callPackage ./serial-bridge { };
           })
         ];
