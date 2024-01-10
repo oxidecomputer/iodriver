@@ -8,7 +8,7 @@ use anyhow::Result;
 use argh::FromArgs;
 use camino::Utf8PathBuf;
 use serial_bridge::serial_bridge_protocol::{
-    receive_message, send_message, GuestToHostMsg, HostToGuestMsg, TestOutput,
+    receive_message, send_message, GuestToHostMsg, HostToGuestMsg, TestOutput, TestStart,
 };
 
 use tokio::time::timeout;
@@ -16,8 +16,22 @@ use tokio_serial::SerialStream;
 use uuid::Uuid;
 
 #[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "send-start")]
+/// inform host we are starting a test
+struct SerBridgeSendTestStartCmd {
+    #[argh(option, default = "Uuid::new_v4()")]
+    /// unique execution ID to identify this test execution. Random ID will be
+    /// generated if not provided
+    test_execution_id: Uuid,
+
+    #[argh(option)]
+    /// name of the test that was executed
+    test_name: String,
+}
+
+#[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "send-results")]
-/// serial bridge guest side
+/// inform host we finished a test
 struct SerBridgeSendTestResultsCmd {
     #[argh(option, default = "Uuid::new_v4()")]
     /// unique execution ID to identify this test execution. Random ID will be
@@ -66,6 +80,7 @@ struct SerBridgeGuestCmd {
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand)]
 enum SerBridgeGuestSubCmd {
+    SendStart(SerBridgeSendTestStartCmd),
     SendTestResults(SerBridgeSendTestResultsCmd),
     RequestTestList(SerBridgeRequestTestListCmd),
     SendDone(SerBridgeSendDoneCmd),
@@ -79,6 +94,16 @@ async fn main() -> Result<()> {
         .expect("Failed to open serial port");
 
     let _: anyhow::Result<()> = match args.subcmd {
+        SerBridgeGuestSubCmd::SendStart(cmd_data) => {
+            let test_start = TestStart {
+                execution_id: cmd_data.test_execution_id,
+                name: cmd_data.test_name,
+            };
+
+            let msg = GuestToHostMsg::TestStart(test_start);
+            send_message(&mut ser, &msg).await?;
+            Ok(())
+        }
         SerBridgeGuestSubCmd::SendTestResults(cmd_data) => {
             let output = tokio::fs::read(cmd_data.test_output).await?;
             let output = String::from_utf8_lossy(&output).to_string();

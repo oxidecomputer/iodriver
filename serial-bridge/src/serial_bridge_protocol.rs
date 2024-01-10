@@ -11,6 +11,12 @@ use uuid::Uuid;
 pub const ALIGNMENT_SEQUENCE: &[u8] = "==\"'= ALIGNMENT SEQUENCE - SOLSTICE =\"'==".as_bytes();
 
 #[derive(PartialEq, Eq, Debug, Serialize, Deserialize)]
+pub struct TestStart {
+    pub execution_id: Uuid,
+    pub name: String,
+}
+
+#[derive(PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub struct TestOutput {
     pub execution_id: Uuid,
     pub name: String,
@@ -22,6 +28,7 @@ pub struct TestOutput {
 
 #[derive(PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub enum GuestToHostMsg {
+    TestStart(TestStart),
     TestOutput(TestOutput),
     WhatTestsShouldIRun(),
     Done(),

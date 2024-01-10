@@ -47,6 +47,9 @@ async fn main() -> anyhow::Result<()> {
     loop {
         let msg = receive_message(&mut buf_stream).await?;
         match msg {
+            GuestToHostMsg::TestStart(start) => {
+                eprintln!("Test starting: {} - {}", start.name, start.execution_id);
+            }
             GuestToHostMsg::TestOutput(output) => {
                 let out_json = serde_json::to_string_pretty(&output)?;
                 stdout.write_all(out_json.as_bytes()).await?;
