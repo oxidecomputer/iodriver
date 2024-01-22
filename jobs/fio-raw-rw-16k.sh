@@ -32,4 +32,4 @@ bs=16K
 rw=rw
 ' > job.fio
 
-fio job.fio; sync
+fio job.fio --output-format "json+"; sync

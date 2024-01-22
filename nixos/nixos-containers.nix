@@ -34,6 +34,10 @@ let
         }
         trap _iodriver_cleanup EXIT
 
+        
+        serial-bridge-guest send-start \
+          --test-name "$jobname"
+
         ${lib.strings.optionalString (job.disk_format != "block") ''
           ${mkfs.${job.disk_format}} /dev/cobblestone
           mkdir -p /iodriver

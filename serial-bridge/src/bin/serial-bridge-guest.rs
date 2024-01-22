@@ -123,6 +123,8 @@ async fn main() -> Result<()> {
         SerBridgeGuestSubCmd::RequestTestList(_) => {
             send_message(&mut ser, &GuestToHostMsg::WhatTestsShouldIRun()).await?;
 
+            eprintln!("Send request for test list, waiting for list of tests to run...");
+
             let response = receive_message(&mut ser);
 
             // if the other end
@@ -130,7 +132,10 @@ async fn main() -> Result<()> {
             // will just run everything. and we dont need to worry about like,
             // discarding bytes or whatever, because if the other side doesnt
             // reply then there will never be any bytes anyway.
-            let response = timeout(Duration::from_millis(5000), response).await;
+
+            /*
+            YYY timeout should happen conditionally based on an environment variable or something
+            let response = timeout(Duration::from_millis(500000), response).await;
 
             let jobs_to_run = match response {
                 Ok(result) => match result? {
@@ -140,6 +145,8 @@ async fn main() -> Result<()> {
                     vec![]
                 }
             };
+            */
+            let HostToGuestMsg::PleaseRunTheseTests(jobs_to_run) = response.await?;
 
             for job in jobs_to_run {
                 println!("{}", job);

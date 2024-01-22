@@ -2,8 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-{ craneLib, pkg-config, systemd }: craneLib.buildPackage {
+{ craneLib, pkg-config, systemd, openssl }: craneLib.buildPackage {
   name = "serial-bridge";
   src = ./.;
-  buildInputs = [ pkg-config systemd ];
+  nativeBuildInputs = [ pkg-config ];
+  buildInputs = [ systemd openssl ];
 }

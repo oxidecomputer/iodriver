@@ -18,10 +18,10 @@
 {
   # Define our inputs.
   inputs = {
-    # This uses the `nixos-23.05` branch of nixpkgs, a stable release branch
+    # This uses the `nixos-23.11` branch of nixpkgs, a stable release branch
     # that is updated when packages are built, tested, and ready to be
     # downloaded.
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
 
     # Crane is a Nix library for building Rust projects that is easier to use
     # than nixpkgs's built-in Rust builder.

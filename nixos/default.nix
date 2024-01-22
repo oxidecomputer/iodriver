@@ -20,6 +20,12 @@ in
   options.iodriver = {
     # The block device to symlink to `/dev/cobblestone`. This is modified in the
     # development VM (see ./vm.nix).
+
+    # YYY im deciding that its fine to keep nuking 0n1 because
+    # - our VMs are getting torn down after the test anyway
+    # - we copytoram the rootfs
+    # - its more representative of a load test because each crucible will be
+    #   active instead of 2 crucibles per instance with only one active
     cobblestone = lib.mkOption { default = "nvme0n1"; };
   };
 
@@ -34,8 +40,33 @@ in
 
     # Allow login as root without a password.
     users.users.root.initialHashedPassword = "";
+
+    # YYY getty on/off should be configurable. And when getty is on, we should
+    # not run iodriver guest in a way where it reads from tty.
+
     # Automatically log in on gettys.
-    services.getty.autologinUser = "root";
+    # services.getty.autologinUser = "root";
+    systemd.services."serial-getty@ttyS0".enable = lib.mkForce false;
+    services.openssh.enable = true;
+
+    systemd.services.oxide-ssh-init = {
+      description = "Add SSH keys from the Oxide cidata volume or EC2 IMDS";
+      # `script` takes a string and adds a bash shebang and `set -e` to it.
+      script = builtins.readFile ./ssh-init.sh;
+      path = with pkgs; [ coreutils curl jq mtools ];
+
+      wantedBy = [ "multi-user.target" ];
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+      before = [ "sshd.service" ];
+
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ConditionPathExists = "!/root/.ssh/authorized_keys";
+      };
+    };
+
 
     # Name the output file `iodriver.iso`.
     isoImage.isoBaseName = "iodriver";
@@ -48,6 +79,7 @@ in
     boot.loader.timeout = lib.mkForce 3;
     boot.kernelParams = [
       # Display console messages to both the serial console and the VGA console.
+      "copytoram"
       "console=ttyS0"
       "console=tty0"
     ];
