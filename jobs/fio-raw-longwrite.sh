@@ -1,4 +1,3 @@
-
 #!/usr/bin/env bash
 #:
 #: disk_format = "block"
@@ -33,4 +32,4 @@ bs=16K
 rw=read
 ' > breakdeep.fio
 
-fio breakdeep.fio
+fio breakdeep.fio --output-format "json+"; sync

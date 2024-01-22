@@ -1054,7 +1054,7 @@ dependencies = [
 [[package]]
 name = "oxide"
 version = "0.2.0"
-source = "git+http://umbreon.eq:3000/artemis-public/oxide.rs.git?branch=artemis/client-creation-improvements#4e6c8c803b9da97aecfef568c74692b133405a44"
+source = "git+https://github.com/faithanalog/oxide.rs.git?branch=artemis/client-creation-convenience#4e6c8c803b9da97aecfef568c74692b133405a44"
 dependencies = [
  "base64",
  "chrono",
