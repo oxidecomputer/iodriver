@@ -142,7 +142,6 @@
             done
           fi
           ${pkgs.serial-bridge}/bin/serial-bridge-guest send-done
-          systemctl poweroff
         '';
       };
     };
