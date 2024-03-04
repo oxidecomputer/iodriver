@@ -71,7 +71,7 @@ in
     # Name the output file `iodriver.iso`.
     isoImage.isoBaseName = "iodriver";
     # Use a very quick but effective compression.
-    isoImage.squashfsCompression = "zstd -Xcompression-level 3";
+    isoImage.squashfsCompression = "zstd -Xcompression-level 19";
 
     # Leave a few seconds for enabling kernel debug messages; but otherwise the
     # default of 10 seconds is a bit too long to be comfortable for automated
