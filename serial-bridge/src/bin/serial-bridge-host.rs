@@ -6,6 +6,7 @@ use std::{
     io::ErrorKind,
     pin::Pin,
     task::{ready, Poll},
+    env,
 };
 
 use anyhow::bail;
@@ -21,7 +22,6 @@ use tokio::{
     net::UnixStream,
 };
 use tokio_tungstenite::{tungstenite::protocol::frame::coding::CloseCode, WebSocketStream};
-use url::Url;
 
 use oxide::{types::InstanceState, ClientInstancesExt};
 
@@ -42,11 +42,6 @@ struct SerBridgeHostUnixCmd {
 /// Connect to a unix socket created by propolis as the host end of a VM's
 /// serial console
 struct SerBridgeHostRackCmd {
-    #[argh(option)]
-    /// base URL of the rack's API endpoint. For example,
-    /// http://some.rack.in.a.oxide.computer/
-    rack_addr: Url,
-
     #[argh(option)]
     /// instance ID in the rack
     instance: String,
@@ -234,20 +229,11 @@ async fn main() -> anyhow::Result<()> {
             Box::pin(BufStream::new(stream))
         }
         SerBridgeHostSubCmd::Rack(cmd) => {
-            let base = cmd.rack_addr.as_str();
-
             // YYY hax
-            let token = {
-                let hosts_toml = std::fs::read_to_string("/home/vi/.config/oxide/hosts.toml")?;
-                let token_ln = hosts_toml
-                    .lines()
-                    .filter(|ln| ln.starts_with("token ="))
-                    .next()
-                    .unwrap();
-                token_ln.replace("\"", "").replace("token = ", "")
-            };
+            let base = env::var("OXIDE_HOST").expect("you need to set OXIDE_HOST to the rack host");
+            let token = env::var("OXIDE_TOKEN").expect("you need to set OXIDE_TOKEN to your auth token");
 
-            let ox_client = oxide::Client::new_with_auth_token(base, &token);
+            let ox_client = oxide::Client::new_with_auth_token(&base, &token);
 
             // Make sure that we can view the instance because the
             // `instance_serial_console_stream` doesn't handle/report API errors.
