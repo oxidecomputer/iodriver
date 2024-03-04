@@ -229,7 +229,6 @@ async fn main() -> anyhow::Result<()> {
             Box::pin(BufStream::new(stream))
         }
         SerBridgeHostSubCmd::Rack(cmd) => {
-            // YYY hax
             let base = env::var("OXIDE_HOST").expect("you need to set OXIDE_HOST to the rack host");
             let token = env::var("OXIDE_TOKEN").expect("you need to set OXIDE_TOKEN to your auth token");
 
